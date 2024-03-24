@@ -3,28 +3,35 @@
 namespace ADT\NullUserStorage;
 
 use Nette\Security\IIdentity;
+use Nette\Security\SimpleIdentity;
 use Nette\Security\UserStorage;
 
 class NullUserStorage implements UserStorage
 {
-	private ?IIdentity $identity = null;
+	private ?string $uid = null;
 
-	function saveAuthentication(IIdentity $identity): void
+	public function saveAuthentication(IIdentity $identity): void
 	{
-		$this->identity = $identity;
+		$this->uid = $identity->getId();
 	}
 
-	function clearAuthentication(bool $clearIdentity): void
+	public function clearAuthentication(bool $clearIdentity): void
 	{
-		$this->identity = null;
+		$this->uid = '';
 	}
 
-	function getState(): array
+	public function getState(): array
 	{
-		return [true, $this->identity, null];
+		if ($this->uid === null) {
+			$this->uid = str_replace('Bearer ', '', $_SERVER['HTTP_AUTHORIZATION'] ?? '');
+		}
+
+		return $this->uid
+			? [true, new SimpleIdentity($this->uid), null]
+			: [false, null, null];
 	}
 
-	function setExpiration(?string $expire, bool $clearIdentity): void
+	public function setExpiration(?string $expire, bool $clearIdentity): void
 	{
 
 	}
